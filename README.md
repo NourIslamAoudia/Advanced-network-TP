@@ -5,7 +5,7 @@
 Pour récupérer le lab sur ton ordinateur :
 
 ```bash
-git clone [git@github.com:NourIslamAoudia/NomDuDepot.git](https://github.com/NourIslamAoudia/Advanced-network-TP)
+git clone https://github.com/NourIslamAoudia/Advanced-network-TP
 cd Advanced-network-TP
 ```
 
