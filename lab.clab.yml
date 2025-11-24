@@ -1,11 +1,194 @@
-name: demo-lab
+name: leaf-spine-datacenter
+
 topology:
   nodes:
-    R1:
+    # ========================================
+    # SPINE LAYER (Backbone/Core)
+    # ========================================
+
+    # Spine-1 - Core Switch 1
+    Spine-1:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv6.conf.all.forwarding=1
+        # Loopback interface for BGP Router-ID
+        - ip addr add 10.255.0.1/32 dev lo
+        # Interfaces to Leaf switches
+        - ip addr add 10.0.1.0/31 dev eth1
+        - ip addr add 10.0.1.2/31 dev eth2
+        # Interface to Edge Router
+        - ip addr add 10.0.2.0/31 dev eth3
+      labels:
+        layer: "spine"
+        role: "core-routing"
+
+    # Spine-2 - Core Switch 2
+    Spine-2:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv6.conf.all.forwarding=1
+        # Loopback interface for BGP Router-ID
+        - ip addr add 10.255.0.2/32 dev lo
+        # Interfaces to Leaf switches
+        - ip addr add 10.0.1.4/31 dev eth1
+        - ip addr add 10.0.1.6/31 dev eth2
+        # Interface to Edge Router
+        - ip addr add 10.0.2.2/31 dev eth3
+      labels:
+        layer: "spine"
+        role: "core-routing"
+
+    # ========================================
+    # LEAF LAYER (Access/ToR Switches)
+    # ========================================
+
+    # Leaf-1 - Top of Rack Switch 1
+    Leaf-1:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv6.conf.all.forwarding=1
+        # Loopback interface for BGP Router-ID
+        - ip addr add 10.255.1.1/32 dev lo
+        # Uplink interfaces to Spines
+        - ip addr add 10.0.1.1/31 dev eth1
+        - ip addr add 10.0.1.5/31 dev eth2
+        # VLAN interfaces for clients
+        - ip link add link eth3 name eth3.10 type vlan id 10
+        - ip link add link eth3 name eth3.20 type vlan id 20
+        - ip addr add 192.168.10.1/24 dev eth3.10
+        - ip addr add 192.168.20.1/24 dev eth3.20
+        - ip link set eth3.10 up
+        - ip link set eth3.20 up
+      labels:
+        layer: "leaf"
+        role: "access-switch"
+
+    # Leaf-2 - Top of Rack Switch 2
+    Leaf-2:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv6.conf.all.forwarding=1
+        # Loopback interface for BGP Router-ID
+        - ip addr add 10.255.1.2/32 dev lo
+        # Uplink interfaces to Spines
+        - ip addr add 10.0.1.3/31 dev eth1
+        - ip addr add 10.0.1.7/31 dev eth2
+        # VLAN interfaces for clients
+        - ip link add link eth3 name eth3.30 type vlan id 30
+        - ip addr add 192.168.30.1/24 dev eth3.30
+        - ip link set eth3.30 up
+      labels:
+        layer: "leaf"
+        role: "access-switch"
+
+    # ========================================
+    # EDGE LAYER (Border Router/Firewall)
+    # ========================================
+
+    # Edge Router - Border/Firewall
+    Edge-Router:
+      kind: linux
+      image: frrouting/frr:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv6.conf.all.forwarding=1
+        # Loopback interface
+        - ip addr add 10.255.255.1/32 dev lo
+        # Interfaces to Spines
+        - ip addr add 10.0.2.1/31 dev eth1
+        - ip addr add 10.0.2.3/31 dev eth2
+        # WAN/Internet simulation interface
+        - ip addr add 203.0.113.1/30 dev eth3
+        # Basic firewall rules (iptables)
+        - iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+        - iptables -A FORWARD -s 192.168.0.0/16 -j ACCEPT
+        - iptables -P FORWARD DROP
+      labels:
+        layer: "edge"
+        role: "border-firewall"
+
+    # ========================================
+    # CLIENT/SERVER LAYER
+    # ========================================
+
+    # Server-1 in VLAN 10 (Production)
+    Server-1:
       kind: linux
       image: alpine:latest
-    R2:
+      exec:
+        - ip addr add 192.168.10.10/24 dev eth1
+        - ip route add default via 192.168.10.1
+        - apk add --no-cache iperf3 tcpdump curl
+      labels:
+        vlan: "10"
+        role: "production-server"
+
+    # Server-2 in VLAN 20 (Development)
+    Server-2:
       kind: linux
       image: alpine:latest
+      exec:
+        - ip addr add 192.168.20.10/24 dev eth1
+        - ip route add default via 192.168.20.1
+        - apk add --no-cache iperf3 tcpdump curl
+      labels:
+        vlan: "20"
+        role: "dev-server"
+
+    # Client-1 in VLAN 30 (Guest Network)
+    Client-1:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 192.168.30.10/24 dev eth1
+        - ip route add default via 192.168.30.1
+        - apk add --no-cache iperf3 tcpdump curl ping
+      labels:
+        vlan: "30"
+        role: "guest-client"
+
+    # External Internet Simulator
+    Internet:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 203.0.113.2/30 dev eth1
+        - ip route add 10.0.0.0/8 via 203.0.113.1
+        - ip route add 192.168.0.0/16 via 203.0.113.1
+        - apk add --no-cache iperf3 tcpdump curl nginx
+      labels:
+        role: "external-network"
+
+  # ========================================
+  # LINKS (Physical Connections)
+  # ========================================
   links:
-    - endpoints: ["R1:eth1", "R2:eth1"]
+    # Spine-1 to Leaf switches
+    - endpoints: ["Spine-1:eth1", "Leaf-1:eth1"]
+    - endpoints: ["Spine-1:eth2", "Leaf-2:eth1"]
+
+    # Spine-2 to Leaf switches
+    - endpoints: ["Spine-2:eth1", "Leaf-1:eth2"]
+    - endpoints: ["Spine-2:eth2", "Leaf-2:eth2"]
+
+    # Spine to Edge Router
+    - endpoints: ["Spine-1:eth3", "Edge-Router:eth1"]
+    - endpoints: ["Spine-2:eth3", "Edge-Router:eth2"]
+
+    # Leaf-1 to Servers/Clients (VLAN 10, 20)
+    - endpoints: ["Leaf-1:eth3", "Server-1:eth1"]
+    - endpoints: ["Leaf-1:eth4", "Server-2:eth1"]
+
+    # Leaf-2 to Clients (VLAN 30)
+    - endpoints: ["Leaf-2:eth3", "Client-1:eth1"]
+
+    # Edge Router to Internet
+    - endpoints: ["Edge-Router:eth3", "Internet:eth1"]
