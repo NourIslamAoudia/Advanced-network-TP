@@ -1,0 +1,220 @@
+# ============================================================
+# COMPLETE LEAF-SPINE LAB - FULLY CONFIGURED
+# ============================================================
+
+name: leaf-spine-lab
+
+mgmt:
+  network: leaf-spine-mgmt
+  ipv4-subnet: 172.20.20.0/24
+  ipv6-subnet: 2001:172:20:20::/64
+
+topology:
+  defaults:
+    env:
+      CLAB_INTFS: 10
+
+  nodes:
+
+    # ========================================
+    # BORDER ROUTER
+    # ========================================
+    border-r1:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      mgmt-ipv4: 172.20.20.10
+      exec:
+        - ip addr add 100.100.100.1/32 dev lo
+        - ip addr add 203.0.113.2/30 dev eth1
+        - ip addr add 10.0.0.1/30 dev eth2
+        - ip addr add 10.0.0.5/30 dev eth3
+        - sysctl -w net.ipv4.ip_forward=1
+      binds:
+        - configs/border-r1.cfg:/etc/frr/frr.conf
+        - configs/daemons/frr-daemons:/etc/frr/daemons
+
+    # ========================================
+    # SPINE-1
+    # ========================================
+    spine-1:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      mgmt-ipv4: 172.20.20.11
+      exec:
+        - ip addr add 1.1.1.1/32 dev lo
+        - ip addr add 10.0.0.2/30 dev eth1
+        - ip addr add 10.1.1.0/31 dev eth2
+        - ip addr add 10.1.1.2/31 dev eth3
+        - ip addr add 10.2.2.0/31 dev eth4
+        - sysctl -w net.ipv4.ip_forward=1
+      binds:
+        - configs/spine-1.cfg:/etc/frr/frr.conf
+        - configs/daemons/frr-daemons:/etc/frr/daemons
+
+    # ========================================
+    # SPINE-2
+    # ========================================
+    spine-2:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      mgmt-ipv4: 172.20.20.12
+      exec:
+        - ip addr add 2.2.2.2/32 dev lo
+        - ip addr add 10.0.0.6/30 dev eth1
+        - ip addr add 10.1.1.4/31 dev eth2
+        - ip addr add 10.1.1.6/31 dev eth3
+        - ip addr add 10.2.2.1/31 dev eth4
+        - sysctl -w net.ipv4.ip_forward=1
+      binds:
+        - configs/spine-2.cfg:/etc/frr/frr.conf
+        - configs/daemons/frr-daemons:/etc/frr/daemons
+
+    # ========================================
+    # LEAF-1
+    # ========================================
+    leaf-1:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      mgmt-ipv4: 172.20.20.21
+      exec:
+        - ip addr add 10.10.10.1/32 dev lo
+        - ip addr add 10.1.1.1/31 dev eth1
+        - ip addr add 10.1.1.5/31 dev eth2
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip link add br10 type bridge
+        - ip link set br10 up
+        - ip link set eth3 master br10
+        - ip link set eth4 master br10
+        - ip addr add 192.168.10.1/24 dev br10
+        - ip link add br20 type bridge
+        - ip link set br20 up
+        - ip link set eth5 master br20
+        - ip addr add 192.168.20.1/24 dev br20
+      binds:
+        - configs/leaf-1.cfg:/etc/frr/frr.conf
+        - configs/daemons/frr-daemons:/etc/frr/daemons
+
+    # ========================================
+    # LEAF-2
+    # ========================================
+    leaf-2:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      mgmt-ipv4: 172.20.20.22
+      exec:
+        - ip addr add 10.10.10.2/32 dev lo
+        - ip addr add 10.1.1.3/31 dev eth1
+        - ip addr add 10.1.1.7/31 dev eth2
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip link add br20 type bridge
+        - ip link set br20 up
+        - ip link set eth3 master br20
+        - ip addr add 192.168.20.1/24 dev br20
+        - ip link add br30 type bridge
+        - ip link set br30 up
+        - ip link set eth4 master br30
+        - ip link set eth5 master br30
+        - ip addr add 192.168.30.1/24 dev br30
+      binds:
+        - configs/leaf-2.cfg:/etc/frr/frr.conf
+        - configs/daemons/frr-daemons:/etc/frr/daemons
+
+    # ========================================
+    # CLIENT DEVICES
+    # ========================================
+    pc1:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.101
+      exec:
+        - ip addr add 192.168.10.10/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.10.1 dev eth1
+
+    pc2:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.102
+      exec:
+        - ip addr add 192.168.10.11/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.10.1 dev eth1
+
+    srv1:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.111
+      exec:
+        - ip addr add 192.168.20.10/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.20.1 dev eth1
+
+    srv2:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.112
+      exec:
+        - ip addr add 192.168.20.11/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.20.1 dev eth1
+
+    srv3:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.121
+      exec:
+        - ip addr add 192.168.30.10/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.30.1 dev eth1
+
+    srv4:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.122
+      exec:
+        - ip addr add 192.168.30.11/24 dev eth1
+        - ip route del default via 172.20.20.1 || true
+        - ip route add default via 192.168.30.1 dev eth1
+
+    internet:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.5
+      exec:
+        - ip addr add 203.0.113.1/30 dev eth1
+
+  # ========================================
+  # LINKS
+  # ========================================
+  links:
+    # Internet connection
+    - endpoints: [ "internet:eth1", "border-r1:eth1" ]
+    
+    # Border to Spines
+    - endpoints: [ "border-r1:eth2", "spine-1:eth1" ]
+    - endpoints: [ "border-r1:eth3", "spine-2:eth1" ]
+    
+    # Spine-1 to Leafs
+    - endpoints: [ "spine-1:eth2", "leaf-1:eth1" ]
+    - endpoints: [ "spine-1:eth3", "leaf-2:eth1" ]
+
+    # Spine-2 to Leafs
+    - endpoints: [ "spine-2:eth2", "leaf-1:eth2" ]
+    - endpoints: [ "spine-2:eth3", "leaf-2:eth2" ]
+    
+    # Spine-1 to Spine-2 (iBGP/OSPF peering)
+    - endpoints: [ "spine-1:eth4", "spine-2:eth4" ]
+    
+    # Leaf-1 to clients (VLAN 10)
+    - endpoints: [ "leaf-1:eth3", "pc1:eth1" ]
+    - endpoints: [ "leaf-1:eth4", "pc2:eth1" ]
+    
+    # Leaf-1 to servers (VLAN 20)
+    - endpoints: [ "leaf-1:eth5", "srv1:eth1" ]
+    
+    # Leaf-2 to servers (VLAN 20)
+    - endpoints: [ "leaf-2:eth3", "srv2:eth1" ]
+    
+    # Leaf-2 to servers (VLAN 30)
+    - endpoints: [ "leaf-2:eth4", "srv3:eth1" ]
+    - endpoints: [ "leaf-2:eth5", "srv4:eth1" ]
