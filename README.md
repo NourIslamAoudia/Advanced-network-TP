@@ -1,6 +1,6 @@
-# Advanced Networks Lab - Leaf-Spine Data Center with SR-MPLS
+# Advanced Networks Lab - Leaf-Spine Data Center with SR-MPLS & Security
 
-Complete implementation of a modern data center network using Containerlab with OSPF, BGP, BFD, and Segment Routing.
+Complete implementation of a modern data center network using Containerlab with OSPF, BGP, BFD, Segment Routing, ACLs, Zone-Based Firewall, and QoS.
 
 ---
 
@@ -74,6 +74,14 @@ sudo containerlab deploy --topo main.clab.yml
 - **Node SIDs**: Unique labels per router (100, 101, 102, 111, 112)
 - **MPLS Global Block**: 16000-23999
 - **OSPF Integration**: Automatic label distribution
+
+### Part 4: Security & QoS ✅
+- **ACLs**: Access Control Lists for traffic filtering
+- **Zone-Based Firewall**: 3 security zones (INTERNAL, DMZ, OUTSIDE)
+- **Stateful Inspection**: Connection tracking with iptables
+- **QoS**: 3-tier traffic prioritization (High/Medium/Default)
+- **Traffic Policing**: ICMP rate limiting for DoS protection
+- **DSCP Marking**: Traffic classification for priority queuing
 
 ---
 
