@@ -133,15 +133,20 @@ sudo containerlab deploy --topo main.clab.yml
 ### Setup Scripts
 - **[configs/bfd-setup.sh](configs/bfd-setup.sh)** - Configure BFD on all links
 - **[configs/sr-mpls-setup.sh](configs/sr-mpls-setup.sh)** - Configure SR-MPLS
+- **[configs/security-setup.sh](configs/security-setup.sh)** - Configure ACLs, Firewall, QoS
 
 ### Post-Deployment
 - **[POST-DEPLOY-FIX.sh](POST-DEPLOY-FIX.sh)** - Fix routes and VLAN 21
   - **MUST RUN** after every deployment!
 
+### Host Configuration
+- **[enable-mpls-on-host.sh](enable-mpls-on-host.sh)** - Load MPLS kernel modules
+
 ### Testing
 - **[test-connectivity.sh](test-connectivity.sh)** - 15 connectivity tests
 - **[test-bfd.sh](test-bfd.sh)** - BFD verification
 - **[test-sr-mpls.sh](test-sr-mpls.sh)** - SR-MPLS verification
+- **[test-security-qos.sh](test-security-qos.sh)** - Security & QoS verification
 
 ---
 
@@ -198,6 +203,18 @@ Verify:
 3. **Verify**:
    ```bash
    ./test-sr-mpls.sh
+   ```
+
+### Enable Security & QoS (Part 4)
+
+1. **Configure ACLs, Firewall, and QoS**:
+   ```bash
+   ./configs/security-setup.sh
+   ```
+
+2. **Verify**:
+   ```bash
+   ./test-security-qos.sh
    ```
 
 ---
@@ -382,6 +399,7 @@ docker exec clab-leaf-spine-lab-spine-1 vtysh -c "show bfd peers"
 - **[QUICK_START.md](QUICK_START.md)** - Getting started guide
 - **[PART3-SR-MPLS-GUIDE.md](PART3-SR-MPLS-GUIDE.md)** - Complete SR-MPLS guide
 - **[SR-MPLS-STATUS.md](SR-MPLS-STATUS.md)** - SR-MPLS implementation status
+- **[PART4-SECURITY-QOS-GUIDE.md](PART4-SECURITY-QOS-GUIDE.md)** - Complete Security & QoS guide
 
 ### Lab Document
 - **todo.pdf** - Original lab requirements (Activity 4)
@@ -418,6 +436,18 @@ Result: 15/15 PASSING ✅
 ✓ Connectivity maintained
 ```
 
+### Security & QoS Tests (test-security-qos.sh)
+```
+✓ ACLs configured on border router
+✓ Zone-Based Firewall: 3 zones (INTERNAL, DMZ, OUTSIDE)
+✓ Stateful firewall rules active
+✓ QoS: 3-tier priority queuing
+✓ Traffic policing: ICMP rate limiting
+✓ Internal-to-internal traffic: Allowed
+✓ Internal-to-DMZ traffic: Allowed
+✓ External-to-internal traffic: Blocked
+```
+
 ---
 
 ## Key Achievements
@@ -427,8 +457,10 @@ Result: 15/15 PASSING ✅
 3. ✅ **BGP overlay with Route Reflectors**
 4. ✅ **VLAN segmentation across leafs**
 5. ✅ **Segment Routing (SR-MPLS) without LDP**
-6. ✅ **Production-grade configuration**
-7. ✅ **Comprehensive testing and documentation**
+6. ✅ **Enterprise-grade Security (ACLs, Zone-Based Firewall)**
+7. ✅ **Quality of Service (QoS) with traffic prioritization**
+8. ✅ **Production-grade configuration**
+9. ✅ **Comprehensive testing and documentation**
 
 ---
 
@@ -440,21 +472,25 @@ Result: 15/15 PASSING ✅
   - BGP (Border Gateway Protocol)
   - BFD (Bidirectional Forwarding Detection)
   - Segment Routing (SR-MPLS)
+  - ACLs (Access Control Lists)
 - **Linux Networking**:
   - Bridges (for Layer 2 switching)
   - MPLS kernel modules
   - Network namespaces
+  - iptables (Zone-Based Firewall)
+  - tc (Traffic Control for QoS)
 - **Docker**: Container runtime
 
 ---
 
-## Future Enhancements (Part 4)
+## Lab Completion Status
 
-According to the lab document, Part 4 includes:
-- **ACLs**: Traffic filtering
-- **Zone-Based Firewall**: Security policies
-- **QoS**: Traffic prioritization
-- **Additional services**: As needed
+✅ **Part 1**: Leaf-Spine Architecture (OSPF, BGP, VLANs) - **COMPLETE**
+✅ **Part 2**: BFD Fast Convergence - **COMPLETE**
+✅ **Part 3**: Segment Routing (SR-MPLS) - **COMPLETE**
+✅ **Part 4**: Security & QoS (ACLs, Firewall, QoS) - **COMPLETE**
+
+**All lab requirements have been successfully implemented!** 🎉
 
 ---
 
