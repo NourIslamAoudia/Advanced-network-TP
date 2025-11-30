@@ -62,8 +62,8 @@ echo "✓ BGP updated"
 echo ""
 
 # Wait for routing to converge
-echo "Waiting 5 seconds for routing to converge..."
-sleep 5
+echo "Waiting 10 seconds for routing to converge..."
+sleep 10
 echo ""
 
 echo "==========================================="
