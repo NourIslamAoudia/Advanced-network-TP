@@ -216,6 +216,7 @@ docker exec clab-leaf-spine-lab-leaf-1 vtysh -c "show ip bgp summary"
 docker exec clab-leaf-spine-lab-leaf-1 vtysh -c "show ip route"
 ```
 
+
 ### Destroy Lab:
 ```bash
 sudo containerlab destroy --topo main.clab.yml --cleanup
